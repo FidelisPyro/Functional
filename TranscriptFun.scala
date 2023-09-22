@@ -1,7 +1,8 @@
+
 //Kyle Lofthus
 
 
-enum Grade(val letter: String, val gpa: Double):
+enum Grade(val letter: String, val num_grade: Double):
     case A extends Grade("A", 4.0)
     case B extends Grade("B", 3.0)
     case C extends Grade("C", 2.0)
@@ -9,37 +10,39 @@ enum Grade(val letter: String, val gpa: Double):
     case F extends Grade("F", 0.0)
 end Grade
 
-/*enum Grade(val letter: String):
-    case A extends Grade("A")
-    case B extends Grade("B")
-    case C extends Grade("C")
-    case D extends Grade("D")
-    case F extends Grade("F")
-*/
 
-case class Record(val course_num: String, grade: Grade, num_credits: Int)
+case class Record(course_num: String, grade: Grade, credits: Int)
 
 type TranscriptData = List[Record]
 
 
 def gpaFun(records: TranscriptData): Double = 
     {
-        var credit_total = 0 
-        var weighted_sum = 0.0
+		def calculateGPA(records: TranscriptData, gpaCredit: Double, credit_total: Int): Double =
+			{
+				records match 
+					case Nil if(credit_total == 0) => 0.0 
+					case Nil => gpaCredit / credit_total
+					case head :: tail => val class_gpaCredit: Double = head.grade.num_grade * head.credits
+						calculateGPA(tail, gpaCredit + class_gpaCredit, credit_total + head.credits)
+			}
+		calculateGPA(records, 0.0, 0)
+	}
 
-        for(record <- records) 
-        {
-            val weighted_gpa = record.grade.gpa * record.num_credits
-            weighted_sum += weighted_gpa
-            credit_total += record.num_credits
-        }
+def isHonorRollFun(records: TranscriptData): Boolean =
+	{
+		records match
+			case Nil => true 
+			case head :: tail => 
+				if head.grade.num_grade >= 3.0
+				then isHonorRollFun(tail) 
+				else false
+	}
 
-        if(credit_total > 0)
-        {
-            weighted_sum / credit_total
-        }
-        else
-        {
-            0.0
-        }
-    }
+def addFun(transcript: TranscriptData, record:Record): TranscriptData =
+	{
+		transcript match
+			case head :: tail => if head.course_num == record.course_num then transcript
+				else addFun(tail, record)
+			case Nil => val new_transcript: TranscriptData = transcript ::: List(record)
+	}
