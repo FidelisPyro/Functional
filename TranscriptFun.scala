@@ -1,5 +1,6 @@
-
 //Kyle Lofthus
+
+package transcript
 
 //creates Grade that holds letter grades, and their equivalent gpa number
 enum Grade(val letter: String, val num_grade: Double):
@@ -43,16 +44,10 @@ def isHonorRollFun(records: TranscriptData): Boolean =
 				else false
 	}
 
-//recursively goes through the TranscriptData and if any course number matches the
-// the new record to be added, then that course is already there and no need to add it.
-//If I have time before due date, I will add that if they match the new one replaces
-//the old one (student retook class for a "hopefully better grade")
+//adds the new record to the Transcripts
 def addFun(transcript: TranscriptData, record:Record): TranscriptData =
 	{
-		transcript match
-			case head :: tail => if head.course_num == record.course_num then transcript
-				else head :: addFun(tail, record)
-			case Nil => transcript ::: List(record)
+		transcript ::: List(record)
 	}
 
 
@@ -63,8 +58,8 @@ def addFun(transcript: TranscriptData, record:Record): TranscriptData =
 def containsFun(transcript: TranscriptData, course: String): Boolean = 
     {
         transcript match
-            case head :: tail => if head.course_num == course 
-                then if head.grade.num_grade >= 2.0 then true else false
+            case head :: tail => if head.course_num == course  
+                then head.grade.num_grade >= 2.0
                 else containsFun(tail, course)
             case Nil => false
     }
