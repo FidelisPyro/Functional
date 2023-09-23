@@ -32,8 +32,7 @@ def gpaFun(records: TranscriptData): Double =
 	}
 
 //recursively goes through the TranscriptData and if any grade is < B then returns false
-//this assumes there is no empty list, because checking if a student who has not taken
-//any classes is on the honor roll, doesn't make since.
+//if the list is empty that they are on the honor roll due to not having any failing grades.
 def isHonorRollFun(records: TranscriptData): Boolean =
 	{
 		records match
@@ -44,7 +43,8 @@ def isHonorRollFun(records: TranscriptData): Boolean =
 				else false
 	}
 
-//adds the new record to the Transcripts
+//adds the new record to the Transcript by concating the new record to the old transcript
+//which creates a new transcript with the same name.
 def addFun(transcript: TranscriptData, record:Record): TranscriptData =
 	{
 		transcript ::: List(record)
