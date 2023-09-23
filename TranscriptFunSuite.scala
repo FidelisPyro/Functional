@@ -1,5 +1,7 @@
 //Kyle Lofthus
 
+package transcript
+
 import munit.ScalaCheckSuite
 import org.scalacheck.Prop._
 import org.scalacheck.Gen
@@ -7,7 +9,7 @@ import org.scalacheck.Arbitrary
 
 import Grade._ 
 val recordGen = for {
-  course  <- Gen.alphaStr
+  course  <- Gen.alphaStr.suchThat(_.nonEmpty)
   grade   <- Gen.oneOf(Grade.values.toList)
   credits <- Gen.choose(1, 4)
 } yield Record(course, grade, credits)
@@ -87,10 +89,9 @@ class TranscriptFunSuite extends ScalaCheckSuite
     property("Adding a passing record will mean the added course is contained in the new transcript") {
     forAll { (t: TranscriptData, record: Record) =>
       val t_added: TranscriptData = addFun(t, record)
-      val obtained = containsFun(t, record.course_num)
-      if obtained == true
-        then assertEquals(obtained, true)
-        else assertEquals(obtained, false)
+      val obtained = containsFun(t_added, record.course_num)
+      val passed: Boolean = record.grade.num_grade >= 2.0
+      assertEquals(obtained, passed)
     }
   }
 
