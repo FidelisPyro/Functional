@@ -3,9 +3,9 @@
 
 package base	
 
-case class Employee(ID: Int, Name: String, Age: Int, Salary: Double)
+case class Employee(emp_ID: Int, Name: String, Age: Int, Salary: Double)
 case class Department(dept_ID: Int, Name: String, Location: String)
-case class EmployeeDepartment(e_ID: Int, d_ID: Int)
+case class EmployeeDepartment(emp_ID: Int, dept_ID: Int)
 
 
 
@@ -65,40 +65,95 @@ def projectCols(list:List[Int]): (Int) => Boolean = {
 
 
 def select(table: Table, rowPred: (Tuple) => Boolean) : Table = {
-    def newTable(table: Table, rows: Table): Table = {
+    def newTable(table: Table, addedRows: Table): Table = {
         table match {
-            case Nil => rows.reverse
+            case Nil => addedRows
             case h::t => 
-                if rowPred(h) then newTable(t, h :: rows)
-                else newTable(t, rows)
+                if rowPred(h) then newTable(t, h :: addedRows)
+                else newTable(t, addedRows)
         }
     }
     newTable(table, Nil)
 }
 
 def selectRows[A](idx:Int, pred: (A) => Boolean): (Tuple) => Boolean = {
-    def checkRows[A](idx: Int, pred:(A) => Boolean, row: Tuple): Boolean = {
-        def checkElements[A](idx: Int, row: Tuple): Option[A] = {
+    def checkRows[A](idx: Int, pred: (A) => Boolean, row: Tuple): Boolean = {
+        def checkElements[B](idx: Int, row: Tuple): Boolean = {
             row match {
-                case EmptyTuple => None
+                case EmptyTuple => false
                 case h*:t => 
-                    if idx == 0 then Some(h.asInstanceOf[A])
+                    if idx == 0 && pred(h.asInstanceOf[A]) 
+                    then if checkElements(idx - 1, t) then false else true
                     else checkElements(idx - 1, t)
             }
         }
-        checkElements(idx, row) match {
-            case None => false
-            case Some(a) => pred(a)
-        }
+        checkElements(idx, row) 
     }
-    (row: Tuple) => checkRows(idx, pred, row)
+    row => checkRows(idx, pred, row)
 }
 
 
+def join(lhs: Table, rhs: Table, theta: (Tuple, Tuple) => Boolean) : Table = {
+    def joinRows(lhsRow: Tuple, rhs: Table, acc: Table): Table = {
+        rhs match {
+            case Nil => Nil
+            case h::t => 
+                val addedRow = lhsRow ++ h
+                if theta(lhsRow, h) then addedRow :: joinRows(lhsRow, t, acc)
+                else joinRows(lhsRow, t, acc)
+        }
+    }
 
+    def joinTables(lhs: Table, rhs: Table, newTable: Table): Table = {
+      lhs match {
+        case Nil => newTable
+        case h::t => 
+          val joinedRows = joinRows(h, rhs, Nil)
+          joinTables(t, rhs, newTable ++ joinedRows)
+      }
+    }
+    joinTables(lhs, rhs, Nil)
+}
 
-//def join(lhs: Table, rhs: Table, theta: (Tuple, Tuple) => Boolean) : Table = ???
+def equiJoin[A](idx1:Int, idx2:Int): (Tuple, Tuple) => Boolean = {
+    def checkElements(lhs: Tuple, rhs: Tuple): Boolean = {
+        (lhs, rhs) match {
+            case (EmptyTuple, EmptyTuple) => true
+            case ((h1) *: t1, (h2) *: t2) => 
+                if (idx1 == 0 && idx2 == 0 && h1 == h2) 
+                then if checkElements(t1, t2) then false else true
+                else checkElements(t1, t2)
+            case _ => false
+        }
+    }
+    (row1: Tuple, row2: Tuple) => checkElements(row1, row2) 
+}
 
+def andConds(preds: List[(Tuple) => Boolean]): (Tuple) => Boolean = {
+    (row: Tuple) => {
+        def checkPreds(preds: List[(Tuple) => Boolean]): Boolean = {
+            preds match {
+                case Nil => true
+                case h::t => 
+                    if h(row) then checkPreds(t)
+                    else false
+            }
+        }
+        checkPreds(preds)
+    }
+}
 
-
+def orConds(preds: List[(Tuple) => Boolean]): (Tuple) => Boolean = {
+    (row: Tuple) => {
+        def checkPreds(preds: List[(Tuple) => Boolean]): Boolean = {
+            preds match {
+                case Nil => false
+                case h::t => 
+                    if h(row) then true
+                    else checkPreds(t)
+            }
+        }
+        checkPreds(preds)
+    }
+}
 
